@@ -1,0 +1,41 @@
+DNS RESOLVER REPORT
+INTRODUCTION:
+
+This is a recursive Domain Name Resolver. This piece of software will recursively contact name servers and query
+for a specified domain name. It will do this until it finds the IP address of the given domain name or it’s canonical
+names is returned. If not located it will issue appropriate notification to the user.
+
+It has been coded in Java and follows all given specifications:
+ It is executable form command line via: java DNS_resolver “www.domain.com”
+ It produces output appropriate to the specified format.
+ It resolves all canonical name chains
+ It resolves any unknown IP address for any domain encountered that needs to be queried
+ It outputs all Name Server IP addresses in the order encountered
+ And most importantly it works
+
+DESIGN:
+The design of the software is concise simple and elegant. It consists of 3 major classes: DNS_resolver, DNS_packet
+and DNS_record. Additionally it contains a utility class common to all 3 main classes: BitMath which holds all low
+the level Bit, Byte and conversion static methods.
+
+ALGORITHM LOGIC:
+Step 1: Send a request to a Root Server. And await reply for TIMEOUT_DELAY seconds.
+Step 2: Read though answer. Firstly; attempt to isolate a TYPE_A answer to the query. If none found; attempt to
+isolate CNAME records. If CNAME located; change the query domain to the currently found CNAME.
+Step 3: Scan though the TYPE_A records to isolate IP addresses to query next. If not found; attempt to find Name
+Servers to resolve. If NS records exist; resolve Name Server IP. Return NS IP down to original resolution thread and
+continue.
+NOTE: Whenever an IP is returned for the next query a flag is set that this IP has been used. This flag is later used
+to filter out non responsive servers and servers which cannot find records for that domain.
+Step 4: Repeat until TYPE_A record found => IP Address Resolved.
+|| TYPE_SOA record found => Domain does not exist.
+|| All NS timed out => Could not resolve IP. (Highly unlikely.)
+
+LIMITATIONS:
+I am currently aware of only two limitations to my program. First limitation is dealing with the case of all servers
+becoming unresponsive. In this scenario the program would need to back-track up the stack and attempt to try the
+next NS down the list from the previous reply. For this I would need to implement a more complicated stack based
+algorithm.
+The second limitation is that my program is unable to handle truncated packets. In the situation that a server does
+not return all records it will attempt only use the packet received. This means it will not establish or query for
+remaining packets though a TCP connection.
